@@ -1,5 +1,7 @@
 package com.varankin.bpg;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -18,6 +20,33 @@ public class Runner
         }
         while( Float.isFinite( loss ) && loss > 0.050F ); //TODO
         System.out.println( "Finished." );
+        try( OutputStream s = new FileOutputStream( "data/model_w.txt" ) )
+        {
+            runner.save( runner.w, new OutputStreamWriter( s, StandardCharsets.UTF_8 ) );
+        }
+        catch( IOException ex )
+        {
+            ex.printStackTrace( System.err );
+        }
+        try( OutputStream s = new FileOutputStream( "data/model_q.txt" ) )
+        {
+            runner.save( runner.q, new OutputStreamWriter( s, StandardCharsets.UTF_8 ) );
+        }
+        catch( IOException ex )
+        {
+            ex.printStackTrace( System.err );
+        }
+    }
+
+    private void save( float[][] m, Writer w ) throws IOException
+    {
+        for( float[] r : m )
+        {
+            for( float v : r )
+                w.write( String.format( "%+12.3f ", v ) );
+            w.write( '\n' );
+        }
+        w.close();
     }
 
     private record IO( float[] inp, float[] out )
@@ -80,6 +109,9 @@ public class Runner
         {
             float[] x = p.inp( sb );
             float[] h = infer( x, y );
+            System.out.printf( "%1.0f%1.0f%1.0f%1.0f %+6.3f %+6.3f %n",
+                    p.inp[3], p.inp[2], p.inp[1], p.inp[0], y[0], y[1] );
+            for( float v : h ) System.out.printf( "%+6.3f ", v ); System.out.println();
 
             float[] t = p.out();
             float[] e = new float[y.length-sb];
