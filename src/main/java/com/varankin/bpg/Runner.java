@@ -49,10 +49,10 @@ public class Runner
         Random rnd = new Random( 12345L );
         for( float[] a : w )
             for( int i = 0; i < a.length; i++ )
-                a[i] = rnd.nextFloat() * 2F - 1F;
+                a[i] = ( rnd.nextFloat() * 2F - 1F ) * 0.001F;
         for( float[] a : q )
             for( int i = 0; i < a.length; i++ )
-                a[i] = rnd.nextFloat() * 2F - 1F;
+                a[i] = ( rnd.nextFloat() * 2F - 1F ) * 0.001F;
 
         io = new IO[16];
         for( int i = 0; i < io.length; i++ )
@@ -144,8 +144,12 @@ public class Runner
     {
         float[][] dq = backward0( h, q, e );
         float[][] dw = backward1( x, w, q, e );
-        sum( q, dq, 2 );
-        sum( w, dw, 2 );
+        // *100   Epoch #550331 loss: 0,049
+        // *1000  Epoch #2081 loss: 0,041
+        // *10000 Epoch #15927 loss: 0,050
+        int n = 2*1000;
+        sum( q, dq, n );
+        sum( w, dw, n );
     }
 
     private float[] infer( float[] x, float[] y )
