@@ -10,7 +10,7 @@ public class Runner
 
     public static void main( String... args )
     {
-        Runner runner = new Runner( 4, 16, 2, true );
+        Runner runner = new Runner( 4, 32, 2, true );
         float loss;
         int n = 0;
         do
@@ -176,10 +176,11 @@ public class Runner
     {
         float[][] dq = backward0( h, q, e );
         float[][] dw = backward1( x, w, q, e );
+        // 4*16*2 schema:
         // *100   Epoch #550331 loss: 0,049
         // *1000  Epoch #2081 loss: 0,041
         // *10000 Epoch #15927 loss: 0,050
-        int n = 2*1000;
+        int n = 2*100;
         sum( q, dq, n );
         sum( w, dw, n );
     }
