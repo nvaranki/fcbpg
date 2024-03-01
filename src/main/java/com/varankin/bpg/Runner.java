@@ -15,7 +15,11 @@ public class Runner
         int n = 0;
         do
         {
-            loss = runner.epoch( 2 );
+            // 4*16*2 schema:
+            // *100   Epoch #550331 loss: 0,049
+            // *1000  Epoch #2081 loss: 0,041
+            // *10000 Epoch #15927 loss: 0,050
+            loss = runner.epoch( 2, 100 );
             System.out.printf( "Epoch #%d loss: %5.3f%n", n++, loss ); //TODO
         }
         while( Float.isFinite( loss ) && loss > 0.050F ); //TODO
@@ -101,7 +105,7 @@ public class Runner
         }
     }
 
-    private float epoch( int sy )
+    private float epoch( int sy, int lri )
     {
         float[] y = new float[sy+sb];
         double loss = 0F;
@@ -120,7 +124,7 @@ public class Runner
                 e[i] = t[i] - y[i];
                 loss += e[i] * e[i]; //TODO max ?
             }
-            train( x, h, e );
+            train( x, h, e, lri );
         }
         return (float) Math.sqrt( loss / io.length );
     }
@@ -172,15 +176,11 @@ public class Runner
                 a[ir][ic] += da[ir][ic] / n;
     }
 
-    private void train( float[] x, float[] h, float[] e )
+    private void train( float[] x, float[] h, float[] e, int lri )
     {
         float[][] dq = backward0( h, q, e );
         float[][] dw = backward1( x, w, q, e );
-        // 4*16*2 schema:
-        // *100   Epoch #550331 loss: 0,049
-        // *1000  Epoch #2081 loss: 0,041
-        // *10000 Epoch #15927 loss: 0,050
-        int n = 2*100;
+        int n = 2* lri;
         sum( q, dq, n );
         sum( w, dw, n );
     }
