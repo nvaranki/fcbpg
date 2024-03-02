@@ -47,7 +47,7 @@ public class Runner
         for( float[] r : m )
         {
             for( float v : r )
-                w.write( String.format( "%+18.6f ", v ) );
+                w.write( String.format( "%+21.9f ", v ) );
             w.write( '\n' );
         }
         w.close();
