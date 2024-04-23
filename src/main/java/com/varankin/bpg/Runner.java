@@ -25,7 +25,7 @@ public final class Runner
     private Runner( int sx, int sh, int sy, boolean bias )
     {
         model = new Model( sx, sh, sy, bias );
-        io = new DataArray( 16, bias );
+        io = new DataArray( sx, bias );
     }
 
     private void run( float accuracy )

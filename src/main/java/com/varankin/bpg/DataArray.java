@@ -13,20 +13,15 @@ final class DataArray extends AbstractCollection<IO> implements DataSource
 {
     private final IO[] io;
 
-    DataArray( int n, boolean bias )
+    DataArray( int bitWidth, boolean bias )
     {
+        int n = 1 << bitWidth;
         io = new IO[n];
         for( int i = 0; i < io.length; i++ )
         {
-            float[] inp = new float[]
-            {
-                    ( i & 0b0001 ) > 0 ? 1F : 0F,
-                    ( i & 0b0010 ) > 0 ? 1F : 0F,
-                    ( i & 0b0100 ) > 0 ? 1F : 0F,
-                    ( i & 0b1000 ) > 0 ? 1F : 0F,
-                    //TODO n
-            };
-
+            float[] inp = new float[bitWidth];
+            for( int b = 0; b < inp.length; b++ )
+                inp[b] = ( i & 1 << b ) > 0 ? 1F : 0F;
             float v = i < io.length / 2 ? 1F : 0F;
             float[] out = new float[]{ v, 1F - v };
 
