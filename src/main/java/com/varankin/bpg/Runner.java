@@ -16,7 +16,7 @@ public final class Runner
     {
         Runner runner = new Runner( 4, 8, 2, true );
         runner.model.reset( new Random( 12345L ) );
-        runner.run( 0.050F );
+        runner.run( 0.050F, 100 );
     }
 
     private final Model model;
@@ -28,7 +28,7 @@ public final class Runner
         io = new DataArray( sx, bias );
     }
 
-    private void run( float accuracy )
+    private void run( float accuracy, int lri )
     {
         float loss;
         int n = 0;
@@ -38,7 +38,7 @@ public final class Runner
             // *100   Epoch #550331 loss: 0,049
             // *1000  Epoch #2081 loss: 0,041
             // *10000 Epoch #15927 loss: 0,050
-            loss = epoch( 2, 100 );
+            loss = epoch( lri );
             System.out.printf( "Epoch #%d loss: %5.3f%n", n++, loss ); //TODO
         }
         while( Float.isFinite( loss ) && loss > accuracy ); //TODO
@@ -72,27 +72,24 @@ public final class Runner
         w.close();
     }
 
-    private float epoch( int sy, int lri )
+    private float epoch( int lri )
     {
-        float[] y = new float[sy+ model.sb];
         double loss = 0F;
         for( IO p : io )
         {
-//            float[] x = p.inp( sb );
-            float[] x = p.inp(); // bias included
-            float[] h = model.infer( x, y );
+            model.infer( p.inp() );
 //            System.out.printf( "%1.0f%1.0f%1.0f%1.0f %+6.3f %+6.3f %n",
-//                    p.inp[3], p.inp[2], p.inp[1], p.inp[0], y[0], y[1] );
-//            for( float v : h ) System.out.printf( "%+6.3f ", v ); System.out.println();
+//                    p.inp[3], p.inp[2], p.inp[1], p.inp[0], model.y[0], model.y[1] );
+//            for( float v : model.h ) System.out.printf( "%+6.3f ", v ); System.out.println();
 
             float[] t = p.out();
-            float[] e = new float[y.length-model.sb];
+            float[] e = new float[t.length];
             for( int i = 0; i < e.length; i++ )
             {
-                e[i] = t[i] - y[i];
+                e[i] = t[i] - model.y[i];
                 loss += e[i] * e[i]; //TODO max ?
             }
-            model.train( x, h, e, lri );
+            model.train( e, lri );
         }
         return (float) Math.sqrt( loss / io.size() );
     }

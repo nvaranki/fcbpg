@@ -8,14 +8,24 @@ import java.util.random.RandomGenerator;
  */
 final class Model
 {
-    final float[][] w, q;
-    final int sb;
+    final float[][] w, q, dw, dq;
+    final float[] x, h, y;
+    private final int sb;
 
     Model( int sx, int sh, int sy, boolean bias )
     {
         sb = bias ? 1 : 0;
-        w = new float[sx+sb][sh];
-        q = new float[sh+sb][sy];
+        x  = new float[sx+sb];
+        w  = new float[sx+sb][sh];
+        dw = new float[sx+sb][sh];
+        h  = new float[sh+sb];
+        q  = new float[sh+sb][sy];
+        dq = new float[sh+sb][sy];
+        y  = new float[sy+sb];
+        // preset constant bias
+        Arrays.fill( x, sx, sx+sb, 1F );
+        Arrays.fill( h, sh, sh+sb, 1F );
+        Arrays.fill( y, sy, sy+sb, 1F );
     }
 
     void reset( RandomGenerator rnd )
@@ -28,52 +38,46 @@ final class Model
                 a[i] = ( rnd.nextFloat() * 2F - 1F ) * 0.001F;
     }
 
-    void train( float[] x, float[] h, float[] e, int lri )
+    void train( float[] e, int lrd )
     {
-        float[][] dq = backward0( h, q, e );
-        float[][] dw = backward1( x, w, q, e );
-        int n = 2* lri;
-        sum( q, dq, n );
-        sum( w, dw, n );
+        backward( h, dq, i -> e[i] );
+        backward( x, dw, i -> e1( i, e ) );
+        float lr = 1f / ( 2 * lrd ); // 2 sums
+        add( q, dq, lr );
+        add( w, dw, lr );
     }
 
-    float[] infer( float[] x, float[] y )
+    private float e1( int ic, float[] e )
     {
-        float[] h = new float[q.length];
-        Arrays.fill( h, q.length-sb, q.length, 1F );
+        float s = 0F;
+        for( int ie = 0; ie < e.length; ie++ )
+            s += e[ie] / q[ic][ie];
+        return s;
+    }
+
+    void infer( float[] input )
+    {
+        System.arraycopy( input, 0, x, 0, x.length );
         forward( x, w, h );
         //relu( h );
         forward( h, q, y );
-        return h;
     }
 
-    private float[][] backward1( float[] x, float[][] w, float[][] q, float[] e )
+    @FunctionalInterface
+    private interface OutError
     {
-        float[][] dw = new float[w.length][q.length-sb];
-        for( int ix = 0; ix < x.length; ix++ )
-            for( int iq = 0; iq < q.length-sb; iq++ )
-            {
-                float s = 0F;
-                for( int ie = 0; ie < e.length; ie++ )
-                    s += e[ie] / q[iq][ie];
-                dw[ix][iq] = s / x[ix] / x.length; //TODO Float.NaN Float.*_INFINITY
-                if( ! Float.isFinite( dw[ix][iq] ) )
-                    dw[ix][iq] = 0F;
-            }
-        return dw;
+        float of( int i );
     }
 
-    private float[][] backward0( float[] x, float[][] w, float[] e )
+    private static void backward( float[] v, float[][] d, OutError e )
     {
-        float[][] dw = new float[w.length][e.length];
-        for( int ix = 0; ix < x.length; ix++ )
-            for( int ie = 0; ie < e.length; ie++ )
+        for( int ir = 0; ir < d.length; ir++ )
+            for( int ic = 0; ic < d[ir].length; ic++ )
             {
-                dw[ix][ie] = e[ie] / x[ix] / x.length; //TODO Float.NaN Float.*_INFINITY
-                if( ! Float.isFinite( dw[ix][ie] ) )
-                    dw[ix][ie] = 0F;
+                d[ir][ic] = e.of( ic ) / v[ir] / v.length; //TODO Float.NaN Float.*_INFINITY
+                if( ! Float.isFinite( d[ir][ic] ) )
+                    d[ir][ic] = 0F;
             }
-        return dw;
     }
 
     private void forward( float[] a, float[][] w, float[] r )
@@ -87,11 +91,11 @@ final class Model
         }
     }
 
-    private static void sum( float[][] a, float[][] da, float n )
+    private static void add( float[][] a, float[][] da, float lr )
     {
         for( int ir = 0; ir < a.length; ir++ )
             for( int ic = 0; ic < a[ir].length; ic++ )
-                a[ir][ic] += da[ir][ic] / n;
+                a[ir][ic] += da[ir][ic]  * lr;
     }
 
     static void relu( float[] m )
