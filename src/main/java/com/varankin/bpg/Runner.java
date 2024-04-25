@@ -16,7 +16,7 @@ public final class Runner
     {
         Runner runner = new Runner( 4, 8, 2, true );
         runner.model.reset( new Random( 12345L ) );
-        runner.run( 0.050F, 100 );
+        runner.run( 0.000750F, 100 );
     }
 
     private final Model model;
@@ -39,7 +39,7 @@ public final class Runner
             // *1000  Epoch #2081 loss: 0,041
             // *10000 Epoch #15927 loss: 0,050
             loss = epoch( lri );
-            System.out.printf( "Epoch #%d loss: %5.3f%n", n++, loss ); //TODO
+            System.out.printf( "Epoch #%d loss: %5.6f%n", n++, loss );
         }
         while( Float.isFinite( loss ) && loss > accuracy ); //TODO
         System.out.println( "Finished." );

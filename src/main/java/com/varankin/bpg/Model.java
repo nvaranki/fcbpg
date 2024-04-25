@@ -32,27 +32,46 @@ final class Model
     {
         for( float[] a : w )
             for( int i = 0; i < a.length; i++ )
-                a[i] = ( rnd.nextFloat() * 2F - 1F ) * 0.001F;
+                a[i] = ( rnd.nextFloat() * 2F - 1F ) / ( w.length * a.length );
         for( float[] a : q )
             for( int i = 0; i < a.length; i++ )
-                a[i] = ( rnd.nextFloat() * 2F - 1F ) * 0.001F;
+                a[i] = ( rnd.nextFloat() * 2F - 1F ) / ( q.length * a.length );
     }
 
     void train( float[] e, int lrd )
     {
-        backward( h, dq, i -> e[i] );
-        backward( x, dw, i -> e1( i, e ) );
+        backward( h, dq, (r,c) -> e0( r, c, e, h ) );
+        backward( x, dw, (r,c) -> e1( r, c, e, x ) );
         float lr = 1f / ( 2 * lrd ); // 2 sums
         add( q, dq, lr );
         add( w, dw, lr );
+        return;
     }
 
-    private float e1( int ic, float[] e )
+    private static float rated( float e, float[] a, float[][] m, int r, int c )
+    {
+        float f = Float.NaN, d = 0f;
+        for( int i = 0; i < m.length; i++ )
+        {
+            float v = Math.abs( m[i][c] * a[i] );
+            d += v;
+            if( i == r )
+                f = v;
+        }
+        return e * f / d;
+    }
+
+    private float e0( int r, int c, float[] e, float[] h )
+    {
+        return rated( e[c], h, q, r, c );
+    }
+
+    private float e1( int r, int c, float[] e, float[] h )
     {
         float s = 0F;
-        for( int ie = 0; ie < e.length; ie++ )
-            s += e[ie] / q[ic][ie];
-        return s;
+        for( int i = 0; i < e.length; i++ )
+            s += e[i] / q[c][i];
+        return rated( s, x, w, r, c );
     }
 
     void infer( float[] input )
@@ -66,7 +85,7 @@ final class Model
     @FunctionalInterface
     private interface OutError
     {
-        float of( int i );
+        float of( int r, int c );
     }
 
     private static void backward( float[] v, float[][] d, OutError e )
@@ -74,7 +93,7 @@ final class Model
         for( int ir = 0; ir < d.length; ir++ )
             for( int ic = 0; ic < d[ir].length; ic++ )
             {
-                d[ir][ic] = e.of( ic ) / v[ir] / v.length; //TODO Float.NaN Float.*_INFINITY
+                d[ir][ic] = e.of( ir, ic ) / v[ir]; //TODO Float.NaN Float.*_INFINITY
                 if( ! Float.isFinite( d[ir][ic] ) )
                     d[ir][ic] = 0F;
             }
@@ -95,7 +114,7 @@ final class Model
     {
         for( int ir = 0; ir < a.length; ir++ )
             for( int ic = 0; ic < a[ir].length; ic++ )
-                a[ir][ic] += da[ir][ic]  * lr;
+                a[ir][ic] += da[ir][ic] * lr;
     }
 
     static void relu( float[] m )
