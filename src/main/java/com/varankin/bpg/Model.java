@@ -1,5 +1,8 @@
 package com.varankin.bpg;
 
+import gov.nist.math.Jama.Matrix;
+import gov.nist.math.Jama.SingularValueDecomposition;
+
 import java.util.Arrays;
 import java.util.random.RandomGenerator;
 
@@ -121,6 +124,26 @@ final class Model
     {
         for( int i = 0; i < m.length; i++ )
             m[i] = Math.max( 0F, m[i] );
+    }
+
+    @Deprecated
+    double[][][] decompose()
+    {
+        double[][] wd = new double[w.length][];
+        for( int r = 0; r < w.length; r++ )
+        {
+            float[] a = w[r];
+            wd[r] = new double[a.length];
+            for( int c = 0; c < a.length; c++ )
+                wd[r][c] = a[c];
+        }
+        SingularValueDecomposition svd = new SingularValueDecomposition( new Matrix( wd ) );
+        return new double[][][]
+                {
+                        svd.getU().getArray(),
+                        svd.getS().getArray(),
+                        svd.getV().getArray(),
+                };
     }
 
 }

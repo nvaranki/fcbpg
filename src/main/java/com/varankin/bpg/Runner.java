@@ -43,6 +43,7 @@ public final class Runner
         }
         while( Float.isFinite( loss ) && loss > accuracy ); //TODO
         System.out.println( "Finished." );
+        model.decompose();
         try( OutputStream s = new FileOutputStream( "data/model_w.txt" ) )
         {
             save( model.w, new OutputStreamWriter( s, StandardCharsets.UTF_8 ) );
